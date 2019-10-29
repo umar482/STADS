@@ -5,16 +5,16 @@ export default class extends Controller {
 
   static targets = [ "id", "price", "minutes", "output", "total-price", "total-minutes"]
   add(e) {
-    http.put(`/games/${this.id}`, {game:{minutes_booked: this.minutes}}).then((res) => {
+    http.put(`/games/${this.id}`, {game: {minutes_booked: this.minutes}}).then((res) => {
       this.minutesTarget.textContent = this.minutes + 1;
-      this.output(+1 ,this.price)
+      this.output(+1, this.price);
     })
   }
   minus() {
     if (this.minutes > 0) {
-      http.put(`/games/${this.id}`, {game:{minutes_booked: this.minutes}}).then((res) => {
-        this.minutesTarget.textContent = this.minutes -1
-        this.output(-1 ,-this.price)
+      http.put(`/games/${this.id}`, {game: {minutes_booked: this.minutes}}).then((res) => {
+        this.minutesTarget.textContent = this.minutes - 1;
+        this.output(-1, -this.price);
       })
     }
   }
@@ -23,11 +23,11 @@ export default class extends Controller {
     var controller = this.application.controllers.slice(-1)[0];
     controller.data.set("total-minutes", this.total_minutes + min)
     controller.data.set("total-price", this.total_price + price)
-    controller.outputTarget.textContent =  this.total_minutes+"min added . added "+ this.total_price 
+    controller.outputTarget.textContent = `${this.total_minutes} min added . added ${this.total_price}` 
  
   }
   get minutes() {
-    return  parseInt(this.minutesTarget.textContent)
+    return parseInt(this.minutesTarget.textContent)
   }
   get id() {
     if (this.data.has("id")) {
