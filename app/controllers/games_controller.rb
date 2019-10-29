@@ -8,6 +8,10 @@ class GamesController < ApplicationController
   def update
     @game = Game.find(params[:id])
     @game.update(games_params)
+    respond_to do |format|
+      format.html { render action: 'index' }
+      format.json { render json: { game: @game }}
+    end
   end
 
   private 

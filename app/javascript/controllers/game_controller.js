@@ -5,14 +5,14 @@ export default class extends Controller {
 
   static targets = [ "id", "price", "minutes", "output", "total-price", "total-minutes"]
   add(e) {
-    http.put(`/games/${this.id}`, {game: {minutes_booked: this.minutes}}).then((res) => {
+    http.put(`/games/${this.id}.json`, {game: {minutes_booked: this.minutes +1}}).then((res) => {
       this.minutesTarget.textContent = this.minutes + 1;
       this.output(+1, this.price);
     })
   }
   minus() {
     if (this.minutes > 0) {
-      http.put(`/games/${this.id}`, {game: {minutes_booked: this.minutes}}).then((res) => {
+      http.put(`/games/${this.id}.json`, {game: {minutes_booked: this.minutes -1}}).then((res) => {
         this.minutesTarget.textContent = this.minutes - 1;
         this.output(-1, -this.price);
       })
