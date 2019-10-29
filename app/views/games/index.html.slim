@@ -1,51 +1,53 @@
-- @games.each do |game|
-  .uk-container.uk-margin-small data-controller="game" data-game-id=game.id data-game-price=game.price_per_minute
-    .uk-card.uk-card-body.uk-card-default.uk-card-hover
-      .uk-grid.uk-flex-middle
-        .uk-flex-wrap.uk-flex.uk-flex-middle.uk-flex-center.uk-margin-small class="uk-width-1-3@m uk-flex-left@s"
-          = image_tag(game.home_team_logo, class:"comany-logo")
-          = image_tag(game.away_team_logo, class:"comany-logo")
-          .game-detail
-            .name.uk-text-center class="uk-text-left@s"
-              span.uk-text-bold.uk-text-primary
-                | #{game.title}
-            .date
-              span
-                | #{game.game_time}
-        .uk-flex.uk-flex-around.uk-text-capitalize.uk-margin-small class="uk-width-1-3@m"
-          .reach
-            .value
-              span.uk-text-bold
-                | #{number_to_human(game.reach)}
-            .label
-              span.uk-text-muted Reach
-          .league
-            .value
-              span.uk-text-bold
-                | #{game.league}
-            .label
-              span.uk-text-muted League
-          .channel
-            .value
-              span.uk-text-bold
-                | #{game.channel}
-            .label
-              span.uk-text-muted Channel
-        .uk-flex.uk-flex-middle.uk-flex-around.uk-flex-wrap.uk-margin-small class="uk-width-1-3@m"
-          .feature-price
-            span.uk-text-large.uk-text-bolder.uk-text-success
-              |#{number_to_currency(game.price_per_minute, precision: 0)}/mintues
-          .uk-flex
-            a.uk-padding-small.uk-background-muted data-action="click->game#add" href="javascript:;" uk-icon=("icon: plus") 
-            .uk-background-secondary.uk-padding-small
-              span.uk-text-white data-target="game.minutes#{}"
-                | #{game.minutes_booked}
-            a.uk-padding-small.uk-background-muted data-action="click->game#minus" href="javascript:;" uk-icon=("icon: minus")
-  .uk-background-muted.checkout-bar data-controller="game" data-game-total-minutes=@total_minutes data-game-total-price=@total_price
-    .uk-container.uk-padding-small
-      span.uk-padding-small data-target="game.output"
-        | #{@total_minutes}min added . added #{@total_price} 
-      button.uk-button.uk-button-primary.uk-button-large
-        | Procceed to checkout
+.team-deails
+  - @games.each do |game|
+    .uk-container.uk-margin-small data-controller="game" data-game-id=game.id data-game-price=game.price_per_minute
+      .uk-card.uk-card-body.uk-card-default.uk-card-hover
+        .uk-grid.uk-flex-middle
+          .uk-flex-wrap.uk-flex.uk-flex-middle.uk-flex-center.uk-margin-small class="uk-width-1-3@m uk-flex-left@s"
+            = image_tag(game.home_team_logo, class:"comany-logo")
+            = image_tag(game.away_team_logo, class:"comany-logo")
+            .game-detail
+              .name.uk-text-center class="uk-text-left@s"
+                span.uk-text-bold.uk-text-primary
+                  | #{game.title}
+              .date
+                span
+                  | #{game.game_time}
+          .uk-flex.uk-flex-around.uk-text-capitalize.uk-margin-small class="uk-width-1-3@m"
+            .reach
+              .value
+                span.uk-text-bold
+                  | #{number_to_human(game.reach)}
+              .label
+                span.uk-text-muted Reach
+            .league
+              .value
+                span.uk-text-bold
+                  | #{game.league}
+              .label
+                span.uk-text-muted League
+            .channel
+              .value
+                span.uk-text-bold
+                  | #{game.channel}
+              .label
+                span.uk-text-muted Channel
+          .uk-flex.uk-flex-middle.uk-flex-around.uk-flex-wrap.uk-margin-small class="uk-width-1-3@m"
+            .feature-price
+              span.uk-text-large.uk-text-bolder.uk-text-success
+                |#{number_to_currency(game.price_per_minute, precision: 0)}/mintues
+            .uk-flex
+              a.uk-padding-small.uk-background-muted data-action="click->game#add" href="javascript:;" uk-icon=("icon: plus") 
+              .uk-background-secondary.uk-padding-small
+                span.uk-text-white data-target="game.minutes#{}"
+                  | #{game.minutes_booked}
+              a.uk-padding-small.uk-background-muted data-action="click->game#minus" href="javascript:;" uk-icon=("icon: minus")
+
+.uk-background-muted.checkout-bar data-controller="game" data-game-total-minutes=@total_minutes data-game-total-price=@total_price
+  .uk-container.uk-padding-small
+    span.uk-padding-small data-target="game.output"
+      | #{@total_minutes}min added . added #{@total_price} 
+    button.uk-button.uk-button-primary.uk-button-large
+      | Procceed to checkout
 
 

@@ -1,3 +1,6 @@
+.team-deails{
+  margin-bottom: 7rem;
+}
 .comany-logo{
   width: 44px;
   height: 44px;
@@ -8,4 +11,8 @@
   bottom: 0;
   width: 100%;
   text-align:right;
+  
+  @media #{$tablet}{
+    text-align: center;
+  }
 }
