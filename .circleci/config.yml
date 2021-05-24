@@ -1,15 +1,176 @@
 version: 2.1
-orbs:
-  ruby: circleci/ruby@0.1.2 
-
-jobs:
-  build:
-    docker:
-      - image: circleci/ruby:2.6.3-stretch-node
-    executor: ruby/default
-    steps:
-      - checkout
+jobs: # a collection of steps
+  build: # runs not using Workflows must have a `build` job as entry point
+    parallelism: 1 # run three instances of this job in parallel
+    docker: # run the steps with Docker
+      - image: circleci/ruby:2.6.5-node-browsers # ...with this image as the primary container; this is where all `steps` will run
+        environment: # environment variables for primary container
+          BUNDLE_JOBS: 1
+          BUNDLE_RETRY: 1
+          BUNDLE_PATH: vendor/bundle
+          PGHOST: 127.0.0.1
+          PGUSER: "stads_test"
+          RAILS_ENV: test
+      - image: circleci/postgres:9.5-alpine # database image
+        environment: # environment variables for database
+          POSTGRES_USER: "stads_test"
+          POSTGRES_DB: stads_test
+          POSTGRES_PASSWORD: ""
+    steps: # a collection of executable commands
+      - checkout # special step to check out source code to working directory
+#      - run: #STABLE
+#          name: Install Chromedriver latest version
+#          command: |
+#            sudo apt-get update
+#            sudo apt-get install lsb-release libappindicator3-1
+#            curl -L -o google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+#            sudo dpkg -i google-chrome.deb
+#            sudo sed -i 's|HERE/chrome"|HERE/chrome" --no-sandbox|g' /opt/google/chrome/google-chrome
+#            rm google-chrome.deb
+      - run:
+          name: install cmake
+          command: sudo apt-get install cmake
+      - run:
+          name: ffmpeg
+          command: |
+            sudo apt-get update && sudo apt-get upgrade -y
+            sudo apt-get install ffmpeg
+            sudo apt-get update -y
+            sudo apt-get install -y curl tar file xz-utils build-essential
+            sudo apt-get install imagemagick
+            sudo apt-get install rsync
+            gem install percy-cli
+      # Which version of bundler?
       - run:
           name: Which bundler?
           command: bundle -v
-      - ruby/bundle-install
+
+      # Restore bundle cache
+      # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+      - restore_cache:
+          keys:
+            - rails-demo-bundle-v2-{{ checksum "Gemfile.lock" }}
+            - rails-demo-bundle-v2-
+
+      - run: # Install Ruby dependencies
+          name: Bundle Install
+          command: bundle check || bundle install
+
+      # Store bundle cache for Ruby dependencies
+      - save_cache:
+          key: rails-demo-bundle-v2-{{ checksum "Gemfile.lock" }}
+          paths:
+            - vendor/bundle
+
+      # Only necessary if app uses webpacker or yarn in some other way
+      - restore_cache:
+          keys:
+            - rails-demo-yarn-{{ checksum "yarn.lock" }}
+            - rails-demo-yarn-
+
+      - run:
+          name: Yarn Install
+          command: yarn install --cache-folder ~/.cache/yarn
+
+      # Store yarn / webpacker cache
+      - save_cache:
+          key: rails-demo-yarn-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
+
+      - run:
+          name: Wait for DB
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+
+      - run:
+          name: Database setup
+          command: bin/rails db:schema:load --trace
+      - run:
+          name: Export ci pr number
+          command: |
+            printenv
+
+      - run:
+          name: Run Pronto
+          environment:
+
+          command: |
+            export PRONTO_GITHUB_ACCESS_TOKEN=6904d461b6088745799d7e272b26528b8b9d4554 && export PULL_REQUEST_URL=${CI_PULL_REQUEST} && export PRONTO_PULL_REQUEST_ID=`echo $CI_PULL_REQUEST | grep -o 'pull.*' | cut -f2- -d/` && bundle exec pronto run -f github_pr -c origin/master
+      - run:
+          name: Run rspec
+          command: |
+            mkdir -p ~/repo/tmp/test-results/rspec
+            bundle exec rspec --profile 10 --format RspecJunitFormatter --out ~/repo/tmp/test-results/rspec/results.xml --format progress
+      - store_artifacts:
+          path: coverage
+          destination: coverge
+      - store_artifacts:
+          path: tmp/screenshots
+          destination: test-screenshots
+      - store_test_results:
+          path: ~/repo/tmp/test-results
+      - run:
+          name: Run danger
+          environment:
+          command: |
+            bundle exec danger
+
+  sentry-release-stage:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:10.11
+    steps:
+      - checkout
+      - run:
+          name: Install Sentry cli
+          command: |
+            curl -sL https://sentry.io/get-cli/ | bash
+      - run:
+          name: Deploy new release
+          command: |
+            export SENTRY_AUTH_TOKEN=15a589aaaad541d7a035a0bc31f675ab4a31d3a82f57489f843593ec772af5ba
+            export SENTRY_ORG=stads-m6
+            VERSION=$(sentry-cli releases propose-version)
+            sentry-cli releases new -p web-app-stage $VERSION
+            sentry-cli releases set-commits --auto $VERSION
+            sentry-cli releases deploys $VERSION new -e staging
+  sentry-release-prod:
+
+    working_directory: ~/repo
+    docker:
+      - image: circleci/node:10.11
+    steps:
+      - checkout
+      - run:
+          name: Install Sentry cli
+          command: |
+            curl -sL https://sentry.io/get-cli/ | bash
+      - run:
+          name: Deploy new release
+          command: |
+            export SENTRY_AUTH_TOKEN=15a589aaaad541d7a035a0bc31f675ab4a31d3a82f57489f843593ec772af5ba
+            export SENTRY_ORG=stads-m6
+            VERSION=$(sentry-cli releases propose-version)
+            sentry-cli releases new -p web-app-prod $VERSION
+            sentry-cli releases set-commits --auto $VERSION
+            sentry-cli releases deploys $VERSION new -e production
+
+workflows:
+  workflow_main:
+    jobs:
+      - build
+      - sentry-release-stage:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - dev
+      - sentry-release-prod:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master
+
